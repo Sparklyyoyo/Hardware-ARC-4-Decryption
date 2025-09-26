@@ -1,14 +1,31 @@
+/* 
+--- File:    tb_rtl_ksa.sv
+--- Module:  tb_rtl_ksa
+--- Brief:   Testbench for 'ksa' core; verifies read/compute/write sequence and S-box swaps.
+
+--- Description:
+---   Drives clock/reset, seeds S-box from 'init.mem', programs a 24-bit key, and
+---   steps through 256 iterations. Uses immediate assertions to check handshake,
+---   addressing, and that S[i] and S[j] are written as expected.
+
+--- Interfaces:
+---   Drives:   clk, rst_n, en, key, rddata
+---   Observes: rdy, addr, wrdata, wren
+
+--- Author: Joey Negm
+*/
+
 `timescale 1ps / 1ps
 
 module tb_rtl_ksa();
 
-    // Inputs
+    // --- Inputs ---
     logic clk;
     logic rst_n;
     logic en;
     logic [23:0] key;
 
-    // Outputs
+    // --- Outputs ---
     logic rdy;
     logic [7:0] addr;
     logic [7:0] rddata;
@@ -16,7 +33,7 @@ module tb_rtl_ksa();
     logic wren;
     logic [7:0] s [0:255];
 
-    // Variables
+    // --- Variables ---
     logic [7:0] temp;
     logic [8:0] counter;
     logic [7:0] i;
@@ -24,10 +41,10 @@ module tb_rtl_ksa();
     logic [7:0] keylength;
     logic err;
 
-    // Instantiate the ksa module
+    // --- Instantiate the ksa module ---
     ksa dut(.*);
 
-    // Clock generation
+    // --- Clock generation ---
     always #5 clk = ~clk;
 
     initial begin
@@ -46,14 +63,13 @@ module tb_rtl_ksa();
 
         #10
 
-        en = 1'b1;
+        en    = 1'b1;
         rst_n = 1'b1;
 
         assert(rdy === 1)
             $display("rdy is correct - INITIALIZE");
 
         else begin
-
             $error("rdy is INCORRECT - INITIALIZE");
             err = 1'b1;
         end
@@ -62,7 +78,6 @@ module tb_rtl_ksa();
             $display("addr is correct - INITIALIZE");
 
         else begin
-
             $error("addr is INCORRECT - INITIALIZE");
             err = 1'b1;
         end
@@ -71,7 +86,6 @@ module tb_rtl_ksa();
             $display("wrdata is correct - INITIALIZE");
 
         else begin
-
             $error("wrdata is INCORRECT - INITIALIZE");
             err = 1'b1;
         end
@@ -80,35 +94,32 @@ module tb_rtl_ksa();
             $display("wren is correct - INITIALIZE");
 
         else begin
-
             $error("wren is INCORRECT - INITIALIZE");
             err = 1'b1;
         end
 
         for(counter = 0; counter <= 255; counter = counter + 1) begin
-            
             i = counter[7:0];
-            #10 //Read_i
 
-            assert(wren === 0);
+            #10 //Read_i
+            assert(wren === 1'b0);
             assert(addr === i);
-            assert(rdy === 0);
-            assert(wrdata === 0);
+            assert(rdy === 1'b0);
+            assert(wrdata === 8'd0);
 
             #10 //Wait_i
-            assert(wren === 0);
-            assert(addr === 0);
-            assert(rdy === 0);
-            assert(wrdata === 0);
+            assert(wren === 1'b0);
+            assert(addr === 1'b0);
+            assert(rdy === 1'b0);
+            assert(wrdata === 8'd0);
 
             rddata = s[i];       
 
             #10 //Read_j
+            assert(wren === 1'b0);
+            assert(rdy === 1'b0);
+            assert(wrdata === 8'd0);
 
-            assert(wren === 0);
-            assert(rdy === 0);
-            assert(wrdata === 0);
-            
             temp = s[i];
 
             case (i % 3)
@@ -118,50 +129,42 @@ module tb_rtl_ksa();
             endcase   
 
             assert(addr === j);
-            #10 //Wait_j
 
-            assert(wren === 0);
-            assert(addr === 0);
-            assert(rdy === 0);
-            assert(wrdata === 0);
+            #10 //Wait_j
+            assert(wren === 1'b0);
+            assert(addr === 1'b0);
+            assert(rdy === 1'b0);
+            assert(wrdata === 8'd0);
 
             rddata = s[j];
 
             #10 //Write_i
-
             assert(wren === 1'b1);
             assert(addr === i);
-            assert(rdy === 0);
-
+            assert(rdy === 1'b0);
 
             s[i] = wrdata;
 
             assert(wrdata === s[j])
                 $display("s_i write is CORRECT || i = %d ", i);
-
             else begin
-
                 $error("s_i write is INCORRECT || i = %d ", i);
                 err = 1'b1;
             end
 
             #10 //Write_j
-
-            assert(wren === 1);
+            assert(wren === 1'b1);
             assert(addr === j);
-            assert(rdy === 0);
+            assert(rdy === 1'b0);
 
             s[j] = wrdata;
 
             assert(wrdata === temp)
                 $display("s_j write is CORRECT || i = %d ", i);
-
             else begin
-
                 $error("s_j write is INCORRECT || i = %d ", i);
                 err = 1'b1;
             end
-
         end
 
         assert(~err)
