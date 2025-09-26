@@ -20,7 +20,7 @@ SystemVerilog implementation of the ARC4 stream cipher with a complete decryptio
 
 ## Overview
 
-ARC4 is a symmetric stream cipher that produces a keystream from a secret key and XORs it with data. Because XOR is symmetric, the same flow encrypts and decrypts.
+ARC4 is a symmetric stream cipher that produces a keystream from a secret key and XORs it with data. 
 
 This project implements ARC4 end to end in hardware:
 
@@ -152,7 +152,7 @@ Verification combined simulation and hardware-level testing:
 
 - **Simulation:**  
   Ran RTL and post-synthesis simulations in ModelSim, viewing waveforms to confirm state sequencing and handshake behavior.  
-  Compared S after KSA and PT after PRGA against a Python reference model.  
+  Compared S after KSA and PT after PRGA against a C reference model.  
 
 - **Coverage:**  
   Achieved 100% branch and statement coverage through directed testbenches and corner-case scenarios.  
